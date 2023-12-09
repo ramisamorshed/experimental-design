@@ -1,0 +1,131 @@
+#CRD
+# Define the response variable
+A<-c(7,8,5,9,10,11) #Treatment A
+B<-c(5,4,4,6,3,5) #Treatment B
+C<-c(9,11,6,3,7,8) #Treatment C
+D<-c(6,12,8,5,11,9) #Treatment D
+E<-c(9,6,8,12,13,12) #Treatment E
+y<-(c(A,B,C,D,E)) # Combine the response variable values
+treat<-as.factor(rep(c("A","B","C","D","E"),each=6)) # Create the treatment factor
+crd<-data.frame(treat,y) # Create the data frame
+model<-lm(y~treat) # Fit the anova model
+#Checking the assumptions
+#Checking normality assumption 
+qqnorm(model$resid)
+qqline(model$resid)
+#Checking Constant variance 
+plot(fitted(model),model$resid)
+plot(y~treat)
+bartlett.test(y,treat)
+## Bartlett test of homogeneity of variances
+#Checking independency
+time.order<-c(sample(1:30)) #Why are we taking random time order?
+plot(time.order,model$resid) 
+abline(h=0)
+bartlett.test(model$resid,treat)
+anova(model) # Perform ANOVA
+## Analysis of Variance Table
+totalss<-(length(y)-1)*var(y) #Cross checking the results of ANOVA
+totalss
+#Testing equality of muB=muD 
+r2<-length(B) #Replication number of treatment B
+r4<-length(D) #Replication number of treatment D
+se<-sqrt(5.6667*((1/r2)+(1/r4))) #Calculating Std error, 
+SE=√[MSE(1/r2+1/r4)]
+t<-(mean(B)-mean(D))/se #Calculating test statistic
+pval<-2*(1-pt(abs(t),25)) #Calculating p-value
+pval
+# 95% CI for (muB-muD)
+c(mean(B)-mean(D)-se*qt(.975,25),mean(B)-mean(D)+se*qt(.975,25))
+
+
+
+
+
+
+
+#RBD
+A<-c(9.3,9.4,9.6,10.0) #Treatment A
+B<-c(9.4,9.3,9.8,9.9) #Treatment B
+C<-c(9.2,9.4,9.5,9.7) #Treatment C
+D<-c(9.7,9.6,10.0,10.2) #Treatment D
+y<-c(A,B,C,D)
+block<-as.factor(rep(1:4,times=4)) #Since we have input our data 
+treatment wise, the block pattern will be 1,2,3,4 & 1,2,3,4 & …
+treat<-as.factor(rep(1:4,each=4)) #Since we have input our data 
+treatment wise, the treatment pattern will be 1,1,1,1 & 2,2,2,2 & …
+rbd<-data.frame(block,treat,y)
+model<-lm(y~block+treat)
+#Checking the assumptions
+par(mfrow=c(2,2))
+#normality
+qqnorm(model$resid)
+qqline(model$resid)
+#Independency
+time.order<-c(sample(1:16))
+plot(time.order,model$resid)
+abline(h=0)
+#Homosceadsticity
+plot(predict(model),model$resid)
+plot(treat, model$residuals)
+data <- data.frame(treat, block, model$residuals)
+library("ggplot2")
+# Create the scatter plot using ggplot
+ggplot(data, aes(x = treat, y = model.residuals)) +
+ geom_point(shape = 16, color = "blue") +
+ geom_hline(yintercept = 0, linetype = "dashed") +
+ labs(x = "treat", y = "Residuals", title = "Residuals vs. Treat")+
+ theme_minimal()
+ggplot(data, aes(x = block, y = model.residuals)) +
+ geom_point(shape = 16, color = "blue") +
+ geom_hline(yintercept = 0, linetype = "dashed") +
+ labs(x = "block", y = "Residuals", title = "Residuals vs. Block")+
+ theme_minimal()
+anova(model)
+#muC-muD
+se<-sqrt(.0089*(2/4)) #SE=√[MSE(2/r)], r=total number of blocks=4
+t<-(mean(C)-mean(D))/se #Test statistc
+p<-2*(1-pt(abs(t),9)) #p-value, Df=(r-1)(k-1)=9
+# 95% CI for (muC-muD)
+c(mean(C)-mean(D)-se*qt(.975,9),mean(C)-mean(D)+se*qt(.975,9)) #Df=(r1)(k-1)=9
+
+
+
+
+
+
+#LSD
+# Input the observed response variable
+y <- c(449, 444, 401, 299, 292, 463, 375, 323, 264, 415, 393, 353, 278, 
+404, 425, 371, 241, 441, 410, 392, 258, 430, 450, 385, 347)
+# Define the factors for row, column, and treatment
+row <- as.factor(rep(1:5, each = 5))
+col <- as.factor(rep(1:5, times = 5))
+treat <- as.factor(c("A", "B", "C", "D", "E", "B", "C", "D", "E", "A", 
+"C", "D", "E", "A", "B", "D", "E", "A", "B", "C", "E", "A", "B", "C", 
+"D"))
+# Create a data frame to store the data
+data.LSD <- data.frame(y, row, col, treat)
+# Fit the linear model with treatment, row, and column as predictors
+model <- lm(y ~ treat + row + col)
+# Checking the normality assumption
+qqnorm(model$resid)
+qqline(model$resid)
+# Checking the independence assumption
+time.order <- c(sample(1:25))
+plot(time.order, model$resid)
+abline(h = 0)
+# Checking the constant variance assumption
+plot(predict(model), model$resid)
+abline(h = 0)
+#95% CI
+yc<-y[treat=="C"]
+ye<-y[treat=="E"]
+se<-sqrt(382.7*(2/5)) #SE=√[MSE(2/r)], r=rows, columns, and treatments 
+each has 5 levels
+c(mean(yc)-mean(ye)-qt(.975,12)*se,mean(yc)-mean(ye)+qt(.975,12)*se) 
+#DF=(r-1)(r-2)=12
+#to check significantly different pair
+#Tukey test
+lsd<-aov(model)
+TukeyHSD(lsd)
